@@ -1,0 +1,42 @@
+{
+  "core_prompt": "What evidence matters for my reading goal?",
+  "card_hints": {
+    "observation": "1 sentence on what the data shows — BEFORE reading what the authors claim. Then panel-by-panel notes if needed.",
+    "question": "Parking a question? Write it here. Resolve it in Pass 3 without overwriting your interpretation.",
+    "audit": "Graph audit: axes + labels / units / scale (lin vs log) / n / error bars named (SD, SEM or 95% CI) / significant or error-prone? One line per key panel."
+  },
+  "fields": [
+    {
+      "qkey": "pipeline",
+      "label": "Pipeline sketch",
+      "hint": "3-5 boxes, input (cells, animals, initial mesh) → output (assay readout, simulation metric). Boxes only; arrows carry the logic.",
+      "type": "textarea",
+      "core": false
+    },
+    {
+      "qkey": "parking_lot_note",
+      "label": "Parking lot note",
+      "hint": "Unfamiliar terms/techniques go in the Parking lot list below — don't stop to Google mid-pass.",
+      "type": "textarea",
+      "core": false
+    }
+  ],
+  "lists": [
+    "parking_lot",
+    "refs_to_read"
+  ],
+  "checklist": [
+    "Can I explain the main claim without looking at the paper?",
+    "Can I summarise the main thrust WITH its supporting evidence?",
+    "Did I verify sample size (n) and error-bar definition for key results?",
+    "Do I have 2-5 unread references queued for background?"
+  ],
+  "todos": [
+    "Figures, diagrams, illustrations BEFORE the results text — one sentence of what the data shows, before their claim",
+    "Audit every key graph (labels, units, scale, n, error bars, significance)",
+    "Map the input→output pipeline",
+    "Park unfamiliar terms/equations instead of Googling mid-pass",
+    "Mark unread references worth coming back to"
+  ],
+  "note": "Fine not to understand everything: (1) unfamiliar terminology/acronyms, (2) hard proofs or technique, (3) poor writing. Park it, read background, then either come back or push on to Pass 3."
+}

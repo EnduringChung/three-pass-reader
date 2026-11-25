@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three-Pass Reader — Library</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <h1 style="font-size:18px; margin-right:auto;">📚 Library</h1>
+    <a href="/search"><button>🔍 Search cards</button></a>
+    <a href="/refs"><button>🔗 Common refs</button></a>
+    <a href="/write"><button>✍️ Write</button></a>
+    <button id="btn-starred" title="show only favourites">☆ Starred</button>
+    <input type="search" id="filter" placeholder="Filter titles…">
+    <button id="btn-import">⬇ Import</button>
+    <button id="btn-backup" title="Snapshot DB + captures">⤓ Backup</button>
+    <button id="btn-rescan" class="primary">Rescan</button>
+  </div>
+
+  <div id="add-root-row">
+    <input id="root-path" placeholder="Folder path, e.g. C:/Users/you/Papers" style="flex:1">
+    <button id="btn-add-root" class="primary">Add folder &amp; scan</button>
+  </div>
+  <div id="dropzone">Drop PDFs here, or <label style="text-decoration:underline;cursor:pointer">choose files<input type="file" id="file-input" accept="application/pdf" multiple hidden></label></div>
+  <div id="roots-line"></div>
+  <div id="list"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let papers = [];
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
+
+async function load(){
+  papers = await (await fetch('/api/papers')).json();
+  render();
+  const r = await (await fetch('/api/roots')).json();
+  $('#roots-line').innerHTML = 'Watching: ' + r.roots.map(x=>`<code>${x}</code>`).join(' · ')
+    + ` · uploads → <code>${r.import_dir}</code>`;
+}
+function render(){
+  const f = $('#filter').value.toLowerCase();
+  const el = $('#list'); el.innerHTML = '';
+  for (const p of papers){
+    if (f && !p.title.toLowerCase().includes(f)) continue;
+    if (starredOnly && !p.starred) continue;   // favourites-only view
+    const dots = ['pass1_done','pass2_done','pass3_done'].map(k=>p[k]?'●':'○').join('');
+    const d = document.createElement('div'); d.className='paper' + (p.starred ? ' is-starred' : '');
+    d.innerHTML = `<button class="star${p.starred ? ' on' : ''}" title="${p.starred ? 'remove from favourites' : 'add to favourites'}"
+        aria-pressed="${p.starred ? 'true' : 'false'}" data-star="${p.id}">${p.starred ? '★' : '☆'}</button>
+      <div class="t"><a href="/reader?work=${p.id}">${p.title}</a>
+      <div class="muted pdots">${dots} ${p.verdict?'<span class="chip '+p.verdict+'">'+p.verdict+'</span>':''}</div></div>
+      <button data-w="${p.id}">Open</button>`;
+    d.querySelector('.star').onclick = (ev)=>{ ev.stopPropagation(); toggleStar(p, ev.currentTarget); };
+    d.querySelector('button[data-w]').onclick = ()=>location=`/reader?work=${p.id}`;
+    el.appendChild(d);
+  }
+  if (!el.children.length) el.innerHTML = '<p class="muted">' +
+    (starredOnly ? 'No favourites yet — click the ☆ next to a title.' : 'No matches.') + '</p>';
+}
+$('#filter').oninput = render;
+
+let starredOnly = false;
+$('#btn-starred').onclick = ()=>{
+  starredOnly = !starredOnly;
+  $('#btn-starred').classList.toggle('on', starredOnly);
+  $('#btn-starred').textContent = starredOnly ? '★ Starred' : '☆ Starred';
+  render();
+};
+
+async function toggleStar(p, btn){
+  const want = !p.starred;
+  btn.disabled = true;                       // optimistic, then corrected by the server's answer
+  btn.textContent = want ? '★' : '☆';
+  btn.classList.toggle('on', want);
+  try {
+    const r = await fetch(`/api/works/${p.id}/star`, {
+      method: 'PATCH', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({starred: want})});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    p.starred = j.starred;
+    toast(j.starred ? 'Added to favourites' : 'Removed from favourites');
+    render();                                // keeps the starred-only view honest
+  } catch (e){
+    btn.textContent = p.starred ? '★' : '☆';
+    btn.classList.toggle('on', !!p.starred);
+    toast('Could not save the star: ' + e.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$('#btn-rescan').onclick = async ()=>{
+  toast('Rescanning…');
+  await fetch('/api/rescan',{method:'POST'});
+  await load(); toast('Library up to date');
+};
+$('#btn-backup').onclick = async ()=>{
+  toast('Backing up…');
+  try {
+    const res = await fetch('/api/backup',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const j = await res.json();
+    toast('Backup: '+j.path+'  ('+Math.round(j.bytes/1e6)+' MB)');
+  } catch(e){ toast('Backup failed: '+e.message); }
+};
+$('#btn-import').onclick = ()=>{
+  const r = $('#add-root-row'), d = $('#dropzone');
+  r.style.display = r.style.display==='flex' ? 'none' : 'flex';
+  d.style.display = d.style.display==='block' ? 'none' : 'block';
+};
+$('#btn-add-root').onclick = async ()=>{
+  const path = $('#root-path').value.trim();
+  if(!path) return;
+  const res = await fetch('/api/roots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path})});
+  if(!res.ok){ toast((await res.json()).detail || 'Not a folder'); return; }
+  toast('Folder added'); await load();
+};
+async function uploadFiles(files){
+  if(!files.length) return;
+  const fd = new FormData();
+  for(const f of files) fd.append('files', f);
+  toast(`Uploading ${files.length}…`);
+  const res = await fetch('/api/upload',{method:'POST',body:fd});
+  const j = await res.json();
+  toast(`Imported: ${j.saved.join(', ')||'nothing'}`);
+  await load();
+}
+const dz = $('#dropzone');
+dz.ondragover = e=>{ e.preventDefault(); dz.classList.add('over'); };
+dz.ondragleave = ()=>dz.classList.remove('over');
+dz.ondrop = e=>{ e.preventDefault(); dz.classList.remove('over'); uploadFiles([...e.dataTransfer.files]); };
+$('#file-input').onchange = e=>uploadFiles([...e.target.files]);
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "roots": [
+    "C:/Users/you/Papers"
+  ],
+  "import_dir": "data/imports",
+  "port": 8765,
+  "exports_dir": "exports",
+  "matrix_xlsx": ""
+}

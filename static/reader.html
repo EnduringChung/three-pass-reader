@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reader</title>
+<link rel="stylesheet" href="/static/style.css?v=9">
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <a href="/">←</a>
+    <button id="btn-star" title="add to favourites" style="font-size:16px;line-height:1">☆</button>
+    <span class="title" id="wtitle">…</span>
+    <button id="btn-orient" title="Toggle split direction">⇄</button>
+    <button id="btn-snap" title="Snapshot a region (s)">✂ Snapshot</button>
+    <span class="zoomctl">
+      <button data-zoom="out" title="Zoom out (−)">−</button>
+      <button data-zoom="fit" title="Fit width (0)"><span class="zoomlabel">100%</span></button>
+      <button data-zoom="in" title="Zoom in (+)">+</button>
+    </span>
+    <span class="muted" id="pageinfo"></span>
+    <button id="btn-export" title="Export markdown + matrix row">⤒ Export</button>
+    <button id="btn-save" title="Save now (Ctrl+S)">Save</button>
+    <span id="savechip">—</span>
+  </div>
+  <div id="split" class="h">
+    <div class="pane" id="pdfpane"></div>
+    <div id="divider"></div>
+    <div class="pane" id="notespane">
+      <div id="tabs">
+        <button data-tab="pass1">Pass 1</button>
+        <button data-tab="pass2" class="on">Pass 2</button>
+        <button data-tab="pass3">Pass 3</button>
+        <button data-tab="refs">Refs</button>
+        <button data-tab="write">Write</button>
+        <button data-tab="scratch">Scratch</button>
+      </div>
+      <div id="tabbody"></div>
+    </div>
+  </div>
+  <div class="phone-tabs">
+    <button id="pt-pdf" class="on">📄 Paper</button>
+    <button id="pt-notes">📝 Notes</button>
+    <span class="zoombar-float">
+      <button data-zoom="out" title="Zoom out">−</button>
+      <button data-zoom="fit" title="Fit width"><span class="zoomlabel">100%</span></button>
+      <button data-zoom="in" title="Zoom in">+</button>
+    </span>
+  </div>
+</div>
+<div id="lightbox"><img id="lbimg" alt=""></div>
+<script src="/static/pdf.js/pdf.min.js"></script>
+<script src="/static/reader.js?v=20"></script>
+</body>
+</html>

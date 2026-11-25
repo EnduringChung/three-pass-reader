@@ -1,0 +1,73 @@
+{
+  "core_prompt": "Is this worth more of my time, and why?",
+  "todos": [
+    "Title, abstract, introduction",
+    "Section + sub-section headings only — ignore the prose",
+    "Conclusions",
+    "Glance references; tick off ones already read (list below)"
+  ],
+  "fields": [
+    {
+      "qkey": "category",
+      "label": "Category",
+      "hint": "What type of paper is this? Measurement / analysis of existing system / research prototype / review?",
+      "type": "textarea",
+      "core": true
+    },
+    {
+      "qkey": "contributions",
+      "label": "Contributions",
+      "hint": "What are the paper's main contributions?",
+      "type": "textarea",
+      "core": true
+    },
+    {
+      "qkey": "verdict_note",
+      "label": "Why (not) worth more time",
+      "hint": "One or two lines. This drives your verdict.",
+      "type": "textarea",
+      "core": true
+    }
+  ],
+  "more_fields": [
+    {
+      "qkey": "keywords",
+      "label": "Keywords",
+      "hint": "Free tags",
+      "type": "text"
+    },
+    {
+      "qkey": "context",
+      "label": "Context",
+      "hint": "Which other papers is it related to? Which theoretical bases were used?",
+      "type": "textarea"
+    },
+    {
+      "qkey": "correctness",
+      "label": "Correctness",
+      "hint": "Do the assumptions appear to be valid?",
+      "type": "textarea"
+    },
+    {
+      "qkey": "clarity",
+      "label": "Clarity",
+      "hint": "Is the paper well written?",
+      "type": "textarea"
+    }
+  ],
+  "lists": [
+    "refs_already_read"
+  ],
+  "checklist": [
+    "Category — what type of paper is this?",
+    "Context — which papers is it related to, which theoretical bases?",
+    "Correctness — do the assumptions appear valid?",
+    "Contributions — what are the main contributions?",
+    "Clarity — is it well written?"
+  ],
+  "verdict": [
+    "advance",
+    "park",
+    "skip"
+  ]
+}

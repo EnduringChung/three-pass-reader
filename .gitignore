@@ -1,0 +1,18 @@
+# --- your data: never in the repo ---
+config.json
+data/
+backups/
+exports/
+logs/
+
+# --- python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+
+# --- os ---
+Thumbs.db
+desktop.ini
+.DS_Store

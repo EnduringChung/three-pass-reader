@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Common references</title>
+<link rel="stylesheet" href="/static/style.css?v=7">
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a href="/"><button>← Library</button></a>
+    <h1 style="font-size:18px; margin-right:auto;">🔗 Common references</h1>
+    <label class="muted" style="display:flex;align-items:center;gap:6px;font-size:13px">
+      cited by at least
+      <input id="minw" type="number" value="2" min="2" max="20" style="width:64px">
+      of my papers
+    </label>
+    <button id="reload">Reload</button>
+  </div>
+  <p class="muted" id="summary">…</p>
+  <div id="list"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let groups = [];
+function toast(m){ const t=$('#toast'); t.textContent=m; t.style.display='block';
+  setTimeout(()=>t.style.display='none', 3000); }
+
+function label(g){
+  const c = g.cites[0] || {};
+  if (c.title_norm) return c.raw.slice(0, 160);
+  if (c.authors) return c.authors.slice(0, 80) + ' ' + (c.year || '');
+  return (c.raw || g.key).slice(0, 160);
+}
+
+async function load(){
+  const n = Math.max(2, parseInt($('#minw').value) || 2);
+  groups = await (await fetch(`/api/refs/common?min_works=${n}`)).json();
+  $('#summary').textContent = groups.length
+    ? `${groups.length} reference(s) cited by ${n}+ of your papers`
+    : `Nothing cited by ${n}+ papers yet — extract references from a few papers first.`;
+  const el = $('#list'); el.innerHTML = '';
+  for (const g of groups){
+    const d = document.createElement('div'); d.className = 'ref-row';
+    const top = document.createElement('div'); top.className = 'row'; top.style.gap='8px';
+    top.innerHTML = `<span class="chip resolved">${g.n_works} papers</span>
+      <span class="ref-label" title="click to expand">${label(g)}</span>`;
+    const more = document.createElement('button'); more.textContent = '▸';
+    top.appendChild(more);
+    d.appendChild(top);
+
+    const detail = document.createElement('div');
+    detail.style.display = 'none'; detail.style.marginTop = '6px';
+    for (const c of g.cites){
+      const line = document.createElement('div');
+      line.className = 'muted'; line.style.cssText = 'font-size:12px;margin:2px 0';
+      line.innerHTML = `<a href="/reader?work=${c.work_id}">${(c.title||'').slice(0,70)}</a>
+        — <span style="opacity:.8">${(c.raw||'').slice(0,120)}</span>`;
+      detail.appendChild(line);
+    }
+    more.onclick = () => {
+      const open = detail.style.display === 'none';
+      detail.style.display = open ? 'block' : 'none';
+      more.textContent = open ? '▾' : '▸';
+    };
+    d.appendChild(detail);
+    el.appendChild(d);
+  }
+}
+$('#reload').onclick = load;
+$('#minw').onchange = load;
+for (const t of ['/api/refs/common?min_works=2']) { /* warm */ }
+load();
+</script>
+</body>
+</html>

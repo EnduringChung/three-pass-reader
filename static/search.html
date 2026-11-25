@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Search cards</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <h1 style="font-size:18px; margin-right:auto;">🔍 Your cards</h1>
+    <a href="/"><button>📚 Library</button></a>
+  </div>
+  <div class="bar">
+    <input type="search" id="q" placeholder='Search your cards — e.g. "size discrepancy", "JKR", "why did aggregation slow"…' style="flex:1">
+  </div>
+  <div id="results"></div>
+</div>
+<script>
+const $ = s => document.querySelector(s);
+let t = null;
+$('#q').addEventListener('input', ()=>{ clearTimeout(t); t = setTimeout(run, 250); });
+const params = new URLSearchParams(location.search);
+if (params.get('q')) { $('#q').value = params.get('q'); run(); }
+
+async function run(){
+  const q = $('#q').value.trim();
+  if (!q){ $('#results').innerHTML=''; return; }
+  const rows = await (await fetch('/api/search?q='+encodeURIComponent(q))).json();
+  const el = $('#results');
+  if (!rows.length){ el.innerHTML = '<p class="muted">Nothing found. Cards are found by words you wrote in them.</p>'; return; }
+  el.innerHTML = '';
+  for (const r of rows){
+    const d = document.createElement('div'); d.className='paper';
+    const snip = r.obs_snip || r.q_snip || '';
+    d.innerHTML = `<div class="t">
+      <a href="/reader?work=${r.work_id}&anchor=${r.first_anchor||''}"><strong>${r.title}</strong></a>
+      <span class="chip ${r.status}">${r.status}</span> <span class="chip">${r.pass}</span>
+      <div class="muted">${snip}</div>
+      <div class="muted">${r.n_anchors} figure${r.n_anchors===1?'':'s'} attached</div></div>
+      <button>Open at figure</button>`;
+    d.querySelector('button').onclick = ()=> location = `/reader?work=${r.work_id}&anchor=${r.first_anchor||''}`;
+    el.appendChild(d);
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+{
+  "core_prompt": "What could change my judgment?",
+  "fields": [
+    {
+      "qkey": "section_notes",
+      "label": "Section notes",
+      "hint": "Introduction / Results / Discussion — jot what changes your reading.",
+      "type": "textarea",
+      "core": true
+    },
+    {
+      "qkey": "reimplement",
+      "label": "Virtual re-implementation",
+      "hint": "Rebuild it in your head under the authors' own assumptions: which step is underspecified, which choice did you have to make for them?",
+      "type": "textarea",
+      "core": true
+    },
+    {
+      "qkey": "critique_discrepancies",
+      "label": "Discrepancies",
+      "hint": "Numbers, figures or claims that don't line up.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "critique_controls",
+      "label": "Controls & replicates",
+      "hint": "Computational: trace how main equations connect inputs to outputs. Wet lab: list exact controls needed vs controls actually in the figures.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "critique_simplifications",
+      "label": "Simplifications",
+      "hint": "Implicit assumptions and neglected effects.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "critique_overclaims",
+      "label": "Discussion overclaims",
+      "hint": "Sentences that go beyond what the figures strictly prove.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "what_if",
+      "label": "\"What if?\" stress test",
+      "hint": "Pick 2-3 fixed parameters, boundary conditions or reagents — what happens if you change them?",
+      "type": "textarea"
+    },
+    {
+      "qkey": "future_work",
+      "label": "Future work ideas",
+      "hint": "At least 1 testable follow-up that addresses a gap.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "backfill",
+      "label": "Backfill (high-value only)",
+      "hint": "Only things missed in Pass 1/2 that change how you interpret results.",
+      "type": "textarea"
+    },
+    {
+      "qkey": "presentation",
+      "label": "How I'd present this",
+      "hint": "One-liner for lab meeting/notes, and the single figure that carries it.",
+      "type": "textarea",
+      "core": false
+    }
+  ],
+  "lists": [
+    "assumptions",
+    "whatifs",
+    "future"
+  ],
+  "checklist": [
+    "Can I reconstruct the experimental/mathematical workflow from memory on a blank sheet?",
+    "Did I identify >2 implicit assumptions or variables that could change the conclusion?",
+    "1 concrete strength + 2 specific methodological weaknesses?",
+    "1 testable follow-up hypothesis or experiment that addresses a gap?"
+  ],
+  "todos": [
+    "Re-derive the core logic / virtually re-implement (computational: trace equations input→output; wet lab: list the controls the claim needs)",
+    "Challenge every assumption in every statement",
+    "What-if: 2-3 fixed parameters, boundary conditions or reagents — what changes?",
+    "Separate data from interpretation in the Discussion",
+    "Note how you'd present it, plus follow-up ideas"
+  ]
+}

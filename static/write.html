@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Write</title>
+<link rel="stylesheet" href="/static/style.css?v=8">
+<style>
+  #wrap2 { display: flex; height: calc(100vh - 52px); }
+  #docs { width: 260px; border-right: 1px solid var(--border); overflow: auto; flex: 0 0 auto; }
+  #docs .doc { padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; font-size: 13px; }
+  #docs .doc.on { background: var(--panel2); border-left: 3px solid var(--accent); }
+  #docs .doc .t { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #main { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; }
+  #toolbar { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px; border-bottom: 1px solid var(--border);
+             background: var(--panel); align-items: center; }
+  #toolbar button { padding: 4px 8px; font-size: 13px; }
+  #toolbar button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  #toolbar .sep { width: 1px; height: 20px; background: var(--border); margin: 0 3px; }
+  #titlebar { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  #titlebar input { font-size: 16px; border: 0; background: transparent; }
+  #editor { flex: 1 1 auto; overflow: auto; padding: 18px 24px 120px; }
+  #doc { max-width: 760px; margin: 0 auto; min-height: 60vh; outline: none; font-size: 16px; line-height: 1.6; }
+  #doc h1 { font-size: 26px; margin: 18px 0 8px; } #doc h2 { font-size: 21px; margin: 16px 0 6px; }
+  #doc h3 { font-size: 17px; margin: 14px 0 4px; }
+  #doc ul, #doc ol { margin: 8px 0 8px 24px; } #doc li { margin: 2px 0; }
+  #doc blockquote { border-left: 3px solid var(--border); margin: 10px 0; padding: 4px 12px; color: var(--muted); }
+  #doc figure { margin: 14px 0; } #doc img { max-width: 100%; border-radius: 4px; }
+  #doc figcaption { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  #doc cite { font-style: normal; color: var(--accent); }
+  #statusbar { padding: 5px 12px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted);
+               display: flex; gap: 14px; }
+  #issues { border-top: 1px solid var(--border); max-height: 30vh; overflow: auto; padding: 8px 12px;
+            font-size: 13px; display: none; }
+  #issues .iss { padding: 3px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  #issues .iss b { color: var(--orange); }
+  #citebox { position: fixed; z-index: 70; right: 18px; top: 70px; width: 480px; max-height: 64vh;
+             background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+             box-shadow: 0 8px 24px #000a; display: none; flex-direction: column; }
+  #citebox input { margin: 8px; width: calc(100% - 16px); }
+  #citeresults { overflow: auto; }
+  #citeresults .ci { padding: 6px 10px; border-top: 1px solid var(--border); cursor: pointer; font-size: 12px; }
+  #citeresults .ci:hover { background: var(--panel); }
+
+  /* embed mode: the reader mounts this page beside the PDF, so drop the app chrome */
+  body.embed .bar, body.embed #docs { display: none; }
+  body.embed #wrap2 { height: 100vh; }
+  body.embed #editor { padding: 12px 16px 80px; }
+  body.embed #doc { max-width: none; font-size: 15px; }
+  body.embed #titlebar { padding: 6px 10px; }
+  body.embed #toolbar { gap: 2px; padding: 4px; }
+  body.embed #toolbar button { padding: 3px 6px; font-size: 12px; }
+  /* links inside a contenteditable do nothing on click — they must look clickable and say so */
+  #doc a { color: #7fb2ff; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+  #doc a:hover { background: rgba(127, 178, 255, .12); }
+  body.embed #citebox { top: 8px; right: 8px; width: calc(100% - 16px); max-height: 50vh; }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a href="/"><button>← Library</button></a>
+  <h1 style="font-size:17px; margin-right:auto;">✍️ Write</h1>
+  <button id="btn-export">⤒ Export md</button>
+  <span id="chip" class="muted">—</span>
+</div>
+
+<div id="wrap2">
+  <div id="docs">
+    <div style="padding:8px 10px;display:flex;gap:6px">
+      <button id="btn-new" class="primary" style="flex:2 1 0">+ New document</button>
+      <button id="btn-import" style="flex:1 1 0" title="import a Word .docx as a new document">⬆ .docx</button>
+      <input id="docxfile" type="file" accept=".docx" style="display:none">
+    </div>
+  </div>
+  <div id="main">
+    <div id="titlebar"><input id="title" placeholder="Document title…"></div>
+    <div id="toolbar">
+      <button data-cmd="formatBlock" data-arg="h1" title="Heading 1">H1</button>
+      <button data-cmd="formatBlock" data-arg="h2" title="Heading 2">H2</button>
+      <button data-cmd="formatBlock" data-arg="h3" title="Heading 3">H3</button>
+      <span class="sep"></span>
+      <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+      <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+      <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+      <span class="sep"></span>
+      <button data-cmd="insertUnorderedList" title="Bullet list">• list</button>
+      <button data-cmd="insertOrderedList" title="Numbered list">1. list</button>
+      <button data-cmd="formatBlock" data-arg="blockquote" title="Quote">❝</button>
+      <button data-cmd="insertHorizontalRule" title="Divider">―</button>
+      <button id="btn-link" title="Add or edit a link (Ctrl+click a link to open it)">🔗 Link</button>
+      <button id="btn-openlink" title="Open the link at the cursor">↗ Open</button>
+      <button data-cmd="removeFormat" title="Clear formatting">⌫fmt</button>
+      <span class="sep"></span>
+      <button id="btn-img" title="Insert image">🖼 Image</button>
+      <button id="btn-cite" title="Insert citation">❞ Cite</button>
+      <button id="btn-bib" title="Generate reference list">≡ Bibliography</button>
+      <span class="sep"></span>
+      <button id="btn-style" title="Toggle citation style">(Author, year)</button>
+      <button id="btn-check" title="Check grammar / style">✓ Check</button>
+      <span class="sep"></span>
+      <button data-cmd="undo" title="Undo">↶</button>
+      <button data-cmd="redo" title="Redo">↷</button>
+    </div>
+    <div id="editor"><div id="doc" contenteditable="true" spellcheck="true"></div></div>
+    <div id="issues"></div>
+    <div id="statusbar"><span id="words">0 words</span><span id="saved">—</span><span id="path"></span></div>
+  </div>
+</div>
+
+<div id="citebox">
+  <input id="citeq" placeholder="Search references and papers…">
+  <div id="citeresults"></div>
+</div>
+<input type="file" id="imgfile" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+
+<script src="/static/write.js?v=10"></script>
+</body>
+</html>

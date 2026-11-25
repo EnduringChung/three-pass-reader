@@ -1,0 +1,7 @@
+# line endings: the repo stores LF, Windows checkouts get CRLF where it matters
+* text=auto
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.ico binary
+*.png binary
+*.pdf binary

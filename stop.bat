@@ -1,3 +1,3 @@
-@echo off
-cd /d "%~dp0"
-".venv\Scripts\python.exe" launcher.py --stop
+@echo off
+cd /d "%~dp0"
+".venv\Scripts\python.exe" launcher.py --stop

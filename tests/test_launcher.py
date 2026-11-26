@@ -84,3 +84,35 @@ def test_second_click_opens_the_browser_without_starting_anything(monkeypatch):
 def test_stop_returns_false_when_nothing_runs(monkeypatch):
     monkeypatch.setattr(launcher, "pids_on_port", lambda: [])
     assert launcher.stop() is False
+
+
+def test_start_hands_the_child_an_open_log_handle(monkeypatch, tmp_path):
+    """Regression: the log file was closed before Popen took its handle, so every cold start raised
+    'ValueError: I/O operation on closed file' from stdout.fileno() and the icon appeared to do nothing."""
+    import sys as _sys
+
+    logs = tmp_path / "server.log"
+    monkeypatch.setattr(launcher, "LOG", logs)
+    monkeypatch.setattr(launcher, "PYW", launcher.Path(_sys.executable))
+    monkeypatch.setattr(launcher, "PY", launcher.Path(_sys.executable))
+    monkeypatch.setattr(launcher, "task_exists", lambda: False)
+    monkeypatch.setattr(launcher, "port_open", lambda *a, **k: True)
+    monkeypatch.setattr(launcher.time, "sleep", lambda s: None)
+
+    seen = {}
+
+    def fake_popen(args, **kw):
+        out = kw["stdout"]
+        assert not out.closed, "Popen was handed a closed handle"
+        out.write(b"child output\n")
+        out.flush()
+        seen["args"], seen["same"] = args, out is kw["stderr"]
+        return object()
+
+    monkeypatch.setattr(launcher.subprocess, "Popen", fake_popen)
+    assert launcher.start() == 0
+    assert seen["args"][-1] == "--serve" and seen["args"][1] == str(launcher.ROOT / "launcher.py")
+    assert seen["same"], "child stdout and stderr must share the one log handle"
+    text = logs.read_text(encoding="utf-8", errors="replace")
+    assert "launcher start" in text and "child output" in text
+

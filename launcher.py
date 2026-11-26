@@ -15,6 +15,7 @@ import socket
 import subprocess
 import sys
 import time
+import traceback
 import webbrowser
 from pathlib import Path
 
@@ -149,6 +150,21 @@ def say(title, text):
         print(f"{title}: {text}", file=sys.stderr)
 
 
+def detach_console():
+    """Release the console this process inherits — or accidentally creates — and stay released.
+
+    A venv's pythonw.exe is only a redirector: it re-execs the console-subsystem python.exe, so even
+    a `start "" pythonw.exe launcher.py` from run.bat ends up owning a console window. Closing that
+    window sends CTRL_CLOSE_EVENT and takes the server with it — exactly "close the cmd and the whole
+    page fails". FreeConsole destroys the window and makes the process immune to the event; nothing
+    is lost on stdout because serve() already redirects logging to logs/server.log.
+    """
+    try:
+        ctypes.windll.kernel32.FreeConsole()
+    except Exception:
+        pass
+
+
 def start():
     LOG.parent.mkdir(parents=True, exist_ok=True)
     py = PYW if PYW.exists() else PY
@@ -160,16 +176,19 @@ def start():
     with open(LOG, "ab") as log:
         log.write(f"\n--- launcher start {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n".encode())
         log.flush()
-    if task_exists():
-        # Task Scheduler owns the process tree: it survives every shell, tool call and window.
-        subprocess.run(["schtasks", "/run", "/tn", TASK_NAME], capture_output=True, text=True)
-    else:
-        # same code path as the logon autostart, so every launch writes the same markers to the log
-        subprocess.Popen(
-            [str(py), str(ROOT / "launcher.py"), "--serve"],
-            cwd=str(ROOT), stdin=subprocess.DEVNULL, stdout=log, stderr=log,
-            creationflags=CREATE_NO_WINDOW | DETACHED, close_fds=True,
-        )
+        # The child is handed a duplicate of THIS handle, so it must still be open here: keeping the
+        # spawn inside the with-block is what makes that true. Spawning after it closed raised
+        # "ValueError: I/O operation on closed file" on stdout.fileno() and the icon did nothing.
+        if task_exists():
+            # Task Scheduler owns the process tree: it survives every shell, tool call and window.
+            subprocess.run(["schtasks", "/run", "/tn", TASK_NAME], capture_output=True, text=True)
+        else:
+            # same code path as the logon autostart, so every launch writes the same markers to the log
+            subprocess.Popen(
+                [str(py), str(ROOT / "launcher.py"), "--serve"],
+                cwd=str(ROOT), stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                creationflags=CREATE_NO_WINDOW | DETACHED, close_fds=True,
+            )
     for _ in range(120):                       # ~30 s; first run also scans the archive
         if port_open(0.3):
             break
@@ -236,8 +255,19 @@ def main(argv):
 
 
 if __name__ == "__main__":
+    ARGV = sys.argv[1:]
+    if "--serve" in ARGV or not ARGV:
+        detach_console()                       # long-lived paths only; --status/--stop keep their console
     try:
-        sys.exit(main(sys.argv[1:]))
+        sys.exit(main(ARGV))
     except Exception as exc:                   # never die silently under pythonw
-        say("Three-Pass Reader :: launcher error", f"{type(exc).__name__}: {exc}")
+        detail = traceback.format_exc()
+        # The message box cannot be pasted from and shows one line; the log keeps the traceback.
+        try:
+            LOG.parent.mkdir(parents=True, exist_ok=True)
+            with open(LOG, "a", encoding="utf-8", errors="replace") as fh:
+                fh.write(f"\n--- launcher error {time.strftime('%Y-%m-%d %H:%M:%S')} ---\n{detail}\n")
+        except OSError:
+            pass
+        say("Three-Pass Reader :: launcher error", f"{type(exc).__name__}: {exc}\n\n{detail}")
         sys.exit(3)
